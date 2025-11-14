@@ -35,7 +35,7 @@ program.hook('preAction', (thisCommand) => {
   }
 });
 
-const availableToolIds = AI_TOOLS.filter((tool) => tool.available && tool.skillsDir).map((tool) => tool.value);
+const availableToolIds = AI_TOOLS.filter((tool) => tool.available).map((tool) => tool.value);
 const toolsOptionDescription = `非交互式配置AI工具。使用 "all"、"none" 或逗号分隔的列表: ${availableToolIds.join(', ')}`;
 
 program

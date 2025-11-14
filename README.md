@@ -1,8 +1,9 @@
 <p align="center">
   <a href="https://github.com/Fission-AI/OpenSpec">
     <picture>
-      <source srcset="assets/openspec_bg.png">
-      <img src="assets/openspec_bg.png" alt="OpenSpec logo">
+      <source srcset="assets/openspec_pixel_dark.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="assets/openspec_pixel_light.svg" media="(prefers-color-scheme: light)">
+      <img src="assets/openspec_pixel_light.svg" alt="OpenSpec logo" height="64">
     </picture>
   </a>
 </p>
@@ -15,87 +16,25 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/org-hex/openspec-chinese/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/org-hex/openspec-chinese/actions/workflows/ci.yml/badge.svg" /></a>
-  <a href="https://www.npmjs.com/package/@org-hex/openspec-chinese"><img alt="npm version" src="https://img.shields.io/npm/v/@org-hex/openspec-chinese?style=flat-square" /></a>
+  <a href="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
-  <a href="https://discord.gg/YctCnvvshC"><img alt="Discord" src="https://img.shields.io/discord/1411657095639601154?style=flat-square&logo=discord&logoColor=white&label=Discord&suffix=%20online" /></a>
 </p>
 
-<details>
-<summary><strong>最受欢迎的规范框架</strong></summary>
+---
 
-[![Stars](https://img.shields.io/github/stars/Fission-AI/OpenSpec?style=flat-square&label=Stars)](https://github.com/Fission-AI/OpenSpec/stargazers)
-[![Downloads](https://img.shields.io/npm/dm/@fission-ai/openspec?style=flat-square&label=Downloads/mo)](https://www.npmjs.com/package/@fission-ai/openspec)
-[![Contributors](https://img.shields.io/github/contributors/Fission-AI/OpenSpec?style=flat-square&label=Contributors)](https://github.com/Fission-AI/OpenSpec/graphs/contributors)
+## 📖 项目简介
 
-</details>
-<p></p>
-我们的理念:
+**OpenSpec 中文版** 是基于 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 的中文本地化版本。
 
-```text
-→ 更流畅，不死板
-→ 更迭代，不瀑布
-→ 更容易，不复杂
-→ 为存量项目而生，而不仅是新项目
-→ 可从个人项目扩展到企业级
-```
+### 🎯 主要特性
 
-> [!TIP]
-> **新工作流已上线！** 我们基于制品驱动的流程重构了 OpenSpec。
->
-> 运行 `/opsx:onboard` 开始使用 → [了解更多](docs/opsx.md)
+- **中文界面支持** - 完整的中文用户界面和文档
+- **零侵入性设计** - 原有代码一行不改，完全独立实现
+- **规范驱动开发** - 在编写代码前与AI达成规范共识
+- **支持主流AI工具** - Claude Code、Cursor、Cline等20+AI编程工具
+- **无需API密钥** - 本地运行，保护隐私
 
-<p align="center">
-  关注 <a href="https://x.com/0xTab">@0xTab</a> 获取更新 · 加入 <a href="https://discord.gg/YctCnvvshC">OpenSpec Discord</a> 交流与提问。
-</p>
-
-### 团队支持
-
-团队使用 OpenSpec？[发邮件联系](mailto:teams@openspec.dev) 申请加入 Slack 频道。
-
-<!-- TODO: Add GIF demo of /opsx:new → /opsx:archive workflow -->
-
-## 一眼看懂
-
-```text
-你: /opsx:new add-dark-mode
-AI:  已创建 openspec/changes/add-dark-mode/
-     准备创建：proposal
-
-你: /opsx:ff   # “fast-forward” - 一次性生成全部规划文档
-AI:  ✓ proposal.md — 为什么做、改什么
-     ✓ specs/       — 需求与场景
-     ✓ design.md    — 技术方案
-     ✓ tasks.md     — 实施清单
-     准备开始实现！
-
-你: /opsx:apply
-AI:  正在实施任务...
-     ✓ 1.1 添加主题上下文提供器
-     ✓ 1.2 创建切换组件
-     ✓ 2.1 添加 CSS 变量
-     ✓ 2.2 接入 localStorage
-     全部完成！
-
-你: /opsx:archive
-AI:  已归档至 openspec/changes/archive/2025-01-23-add-dark-mode/
-     规范已更新。准备下一个特性。
-```
-
-<details>
-<summary><strong>OpenSpec Dashboard</strong></summary>
-
-<p align="center">
-  <img src="assets/openspec_dashboard.png" alt="OpenSpec dashboard preview" width="90%">
-</p>
-
-</details>
-
-## 中文版说明
-
-**OpenSpec 中文版** 基于 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 本地化，提供完整中文界面与模板。
-
-### 与原版区别
+### 🔧 与原版区别
 
 | 特性 | 原版 OpenSpec | OpenSpec 中文版 |
 |------|---------------|-----------------|
@@ -105,100 +44,189 @@ AI:  已归档至 openspec/changes/archive/2025-01-23-add-dark-mode/
 | 中文模板 | - | ✅ 完整支持 |
 | Gherkin关键字 | 英文 | 英文（保持兼容性） |
 
-## 快速开始
+## 🚀 快速开始
 
-**需要 Node.js 20.19.0 或更高版本。**
+### 系统要求
 
-全局安装：
+- **Node.js >= 20.19.0**
+
+### 安装
+
+#### 方法1：全局安装（推荐）
 
 ```bash
-npm install -g @org-hex/openspec-chinese@latest
+npm install -g @org-hex/openspec@latest
 ```
 
-进入项目目录并初始化：
+#### 方法2：本地开发模式
 
 ```bash
+# 克隆中文版仓库
+git clone https://github.com/org-hex/OpenSpec-Chinese.git
+cd OpenSpec-Chinese
+
+# 安装依赖
+pnpm install
+
+# 构建项目
+pnpm run build
+```
+
+#### 方法3：使用npm link（本地开发推荐）
+
+```bash
+# 克隆中文版仓库
+git clone https://github.com/org-hex/OpenSpec-Chinese.git
+cd OpenSpec-Chinese
+
+# 安装依赖
+pnpm install
+
+# 构建项目
+pnpm run build
+
+# 创建全局符号链接
+npm link
+
+# 验证链接成功
+openspec-chinese --version
+
+# 如需取消链接
+npm unlink -g @fission-ai/openspec
+```
+
+### 启动命令
+
+根据您的安装方式，选择以下方法启动：
+
+#### 全局安装后
+```bash
+# 直接使用命令
+openspec-chinese
+
+# 查看帮助
+openspec-chinese --help
+
+# 查看版本
+openspec-chinese --version
+```
+
+#### 本地开发模式（直接运行）
+```bash
+# 在 OpenSpec-Chinese 项目目录下
+pnpm run build && node bin/openspec-chinese.js
+```
+
+#### 使用 npm link 后（推荐开发者）
+```bash
+# 链接后可以像全局安装一样使用
+openspec-chinese
+
+# 查看帮助
+openspec-chinese --help
+
+# 查看版本
+openspec-chinese --version
+```
+
+### 初始化项目
+
+```bash
+# 进入你的项目目录
 cd your-project
+
+# 使用中文版初始化
 openspec-chinese init
+
+# 验证安装
+openspec-chinese --version
 ```
 
-现在告诉你的 AI：`/opsx:new <你想实现的功能>`
+### 开发者常用命令
 
-> [!NOTE]
-> 不确定工具是否支持？[查看完整列表](docs/supported-tools.md) – 已支持 20+ 工具并持续增加。
->
-> 同样支持 pnpm、yarn、bun 与 nix。 [查看安装选项](docs/installation.md)。
+```bash
+# 在 OpenSpec-Chinese 项目目录下进行开发
 
-## 文档
+# 构建项目
+pnpm run build
 
-**中文文档：**
+# 开发模式（自动重新构建）
+pnpm run dev
 
-→ **[中文版说明](docs/zh-CN/README.md)**：中文版本概览<br>
-→ **[中文使用指南](docs/zh-CN/usage-guide.md)**：完整使用流程<br>
-→ **[中文格式问题解决方案](docs/zh-CN/format-issues-solution.md)**：常见问题排查<br>
+# 运行中文版CLI（直接运行）
+pnpm run build && node bin/openspec-chinese.js
 
-**英文文档：**
+# 创建全局链接（推荐）
+npm link
 
-→ **[Getting Started](docs/getting-started.md)**：快速上手<br>
-→ **[Workflows](docs/workflows.md)**：组合与流程<br>
-→ **[Commands](docs/commands.md)**：斜杠命令与技能<br>
-→ **[CLI](docs/cli.md)**：命令行参考<br>
-→ **[Supported Tools](docs/supported-tools.md)**：工具与安装路径<br>
-→ **[Concepts](docs/concepts.md)**：核心概念
-→ **[Multi-Language](docs/multi-language.md)**：多语言支持<br>
-→ **[Customization](docs/customization.md)**：自定义扩展
+# 测试链接是否成功
+openspec-chinese --version
 
-## 为什么选择 OpenSpec？
+# 运行测试
+pnpm test
 
-AI 编程助手很强大，但如果需求只存在于聊天记录里，结果往往不可控。OpenSpec 提供一层轻量规格，让你在写代码之前先对齐要做什么。
+# 运行测试并生成覆盖率报告
+pnpm run test:coverage
 
-- **先对齐，再实现** — 人与 AI 在写代码前先对齐规格
-- **结构化管理** — 每个变更独立目录，包含提案、规范、设计、任务
-- **流畅迭代** — 任意阶段可更新产物，无需僵硬的阶段门
-- **兼容多工具** — 通过斜杠命令支持 20+ AI 助手
+# 取消全局链接
+npm unlink -g @fission-ai/openspec
 
-### 对比
+# 重新链接（代码更新后）
+pnpm run build && npm link
+```
 
-**对比 [Spec Kit](https://github.com/github/spec-kit)**（GitHub）— 完整但偏重，Markdown 量大、流程更刚性。OpenSpec 更轻量，适合快速迭代。
-
-**对比 [Kiro](https://kiro.dev)**（AWS）— 强大但绑定 IDE 且模型受限。OpenSpec 适配你现有的工具链。
-
-**对比“没有规范”** — 没有规格的 AI 编程容易跑偏。OpenSpec 帮你在保持灵活的同时提升确定性。
-
-## 常用命令
+## 📋 使用方法
 
 ### 1. 创建变更提案
 
 ```bash
-# 方法1：CLI
+# 方法1：使用CLI命令
 openspec-chinese proposal "添加用户搜索功能"
 
-# 方法2：AI 助手指令（支持的工具）
+# 方法2：在AI助手中使用（支持的工具）
 # Claude Code: /openspec:proposal 添加用户搜索功能
 # Cursor: /openspec-proposal 添加用户搜索功能
 # Cline: 在工作流中选择 "Create OpenSpec Proposal"
 ```
 
-### 2. 查看与管理
+### 2. 查看和管理变更
 
 ```bash
+# 查看所有变更
 openspec-chinese list
+
+# 查看特定变更详情
 openspec-chinese show add-user-search
+
+# 验证变更格式
 openspec-chinese validate add-user-search
+
+# 交互式仪表板
 openspec-chinese view
 ```
 
-### 3. 实施与归档
+### 3. 实施变更
 
 ```bash
-# 让 AI 实施变更
-# “请实施 add-user-search 变更”
+# 在AI助手中实施变更
+# "请实施 add-user-search 变更"
 
-# 归档完成的变更
-openspec-chinese archive add-user-search --yes
+# AI助手会：
+# 1. 查看任务列表 (openspec/changes/add-user-search/tasks.md)
+# 2. 按照规范实施代码
+# 3. 标记完成的任务
 ```
 
-## 支持的AI工具
+### 4. 归档变更
+
+```bash
+# 归档完成的变更
+openspec-chinese archive add-user-search --yes
+
+# 这会将变更合并到主规范中
+```
+
+## 🎯 支持的AI工具
 
 ### 原生支持（斜杠命令）
 
@@ -217,7 +245,7 @@ openspec-chinese archive add-user-search --yes
 所有支持 `AGENTS.md` 规范的AI工具都可以使用，包括：
 - Amp、Jules 等其他工具
 
-## 项目结构
+## 📁 项目结构
 
 ```
 your-project/
@@ -237,7 +265,9 @@ your-project/
 │   └── AGENTS.md           # AI助手指令
 ```
 
-## 规范格式示例
+## 📝 规范格式示例
+
+### 正确的中文规范格式
 
 ```markdown
 ## ADDED Requirements
@@ -264,10 +294,10 @@ your-project/
 
 **重要提示：**
 - `## ADDED|MODIFIED|REMOVED Requirements` 必须使用英文
-- `#### Scenario:`、`**WHEN**`、`**THEN**` 等 Gherkin 关键字必须使用英文
+- `#### Scenario:`、`**WHEN**`、`**THEN**` 等Gherkin关键字必须使用英文
 - 描述性内容可以使用中文
 
-## 高级用法
+## 🔧 高级用法
 
 ### 项目上下文配置
 
@@ -285,34 +315,53 @@ your-project/
 ### 更新AI助手配置
 
 ```bash
+# 更新AI助手指令和斜杠命令
 openspec-chinese update
 ```
 
-## 更新 OpenSpec 中文版
+## 🆘 常见问题
 
-**升级包版本**
+### Q: 如何启动 openspec-chinese 命令？
+A: 有几种方式：
+- **全局安装后**：直接使用 `openspec-chinese`
+- **本地开发**：在项目目录下使用 `pnpm run build && node bin/openspec-chinese.js`
+- **使用npm link**：构建后使用 `npm link`，然后全局可用
 
-```bash
-npm install -g @org-hex/openspec-chinese@latest
-```
+### Q: 运行时提示 "command not found: openspec-chinese" 怎么办？
+A: 根据您的安装方式检查：
+- **全局安装**：尝试重新安装 `npm install -g @fission-ai/openspec@latest`
+- **本地开发**：
+  1. 确保在项目目录下
+  2. 运行 `pnpm run build` 构建项目
+  3. 使用 `npm link` 创建全局链接
+  4. 或者直接使用：`node bin/openspec-chinese.js`
+- **验证链接**：运行 `openspec-chinese --version` 确认可用
 
-**刷新 AI 助手指令**
+### Q: npm link 后命令仍然不可用？
+A: 可能的原因和解决方案：
+1. **权限问题**：尝试使用 `sudo npm link`（不推荐）或检查 npm 配置
+2. **PATH 问题**：确保全局 npm bin 目录在 PATH 中
+3. **链接失败**：尝试 `npm unlink -g @fission-ai/openspec` 然后 `npm link`
+4. **包名冲突**：检查是否已安装其他版本的 openspec
 
-在每个项目内运行，重新生成指令与斜杠命令：
+### Q: 如何切换回英文版？
+A: 使用原版命令 `openspec` 即可，两个版本可以并存。
 
-```bash
-openspec-chinese update
-```
+### Q: 中文版是否与原版兼容？
+A: 完全兼容。规范文件格式相同，可以与使用原版的团队成员协作。
 
-## 使用建议
+### Q: 支持哪些中文AI模型？
+A: 支持所有遵循OpenSpec格式的AI工具，包括国产AI模型。
 
-**模型选择**：OpenSpec 更适合高推理模型。我们建议 Opus 4.5 与 GPT 5.2 用于规划与实现。
+### Q: 如何贡献中文翻译改进？
+A: 欢迎提交PR改进中文模板和文档。
 
-**上下文卫生**：保持上下文清晰。开始实现前清理上下文，执行过程中保持简洁。
+### Q: 开发时需要重新构建吗？
+A: 是的，每次修改源代码后需要运行 `pnpm run build`，或者使用 `pnpm run dev` 进入监视模式自动构建。
 
-## 贡献
+## 🤝 贡献
 
-欢迎为 OpenSpec 中文版贡献代码：
+欢迎为OpenSpec中文版贡献代码：
 
 ```bash
 # 安装依赖
@@ -323,42 +372,23 @@ pnpm run build
 
 # 测试
 pnpm test
+
+# 本地开发
+pnpm run dev
 ```
 
-**小改动** — Bug 修复、拼写修正、细节优化可直接提 PR。
+## 📄 许可证
 
-**大改动** — 新功能、重要重构或架构调整请先提交 OpenSpec 变更提案，确保目标对齐。
+MIT License - 与原版保持一致
 
-提交 PR 时请确保已测试。如果包含 AI 生成代码，请说明使用的工具与模型版本。
+## 🔗 相关链接
 
-### 开发
+- [原版 OpenSpec](https://github.com/Fission-AI/OpenSpec)
+- [OpenSpec 官方文档](https://openspec.dev)
+- [AGENTS.md 规范](https://agents.md/)
 
-- 安装依赖：`pnpm install`
-- 构建：`pnpm run build`
-- 测试：`pnpm test`
-- 本地开发 CLI：`pnpm run dev` 或 `pnpm run dev:cli`
-- 约定式提交（一行）：`type(scope): subject`
+---
 
-## 其他
-
-<details>
-<summary><strong>Telemetry</strong></summary>
-
-OpenSpec 会收集匿名使用统计。
-
-只收集命令名与版本，用于了解使用情况。不收集参数、路径、内容或 PII。在 CI 中会自动禁用。
-
-**关闭方式：** `export OPENSPEC_TELEMETRY=0` 或 `export DO_NOT_TRACK=1`
-
-</details>
-
-<details>
-<summary><strong>Maintainers & Advisors</strong></summary>
-
-维护者与顾问列表见 [MAINTAINERS.md](MAINTAINERS.md)。
-
-</details>
-
-## License
-
-MIT
+<p align="center">
+  <strong>让AI编程助手更好地理解中文开发需求 🚀</strong>
+</p>

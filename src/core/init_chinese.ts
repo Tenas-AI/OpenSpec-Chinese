@@ -1,6 +1,4 @@
 import path from 'path';
-import * as fs from 'fs';
-import { createRequire } from 'module';
 import {
   createPrompt,
   isBackspaceKey,
@@ -15,46 +13,22 @@ import {
 import chalk from 'chalk';
 import ora from 'ora';
 import { FileSystemUtils } from '../utils/file-system.js';
-import { transformToHyphenCommands } from '../utils/command-references.js';
+import { TemplateManagerChinese, ProjectContext } from './templates_chinese/index.js';
+import { ToolRegistry } from './configurators/registry.js';
+import { SlashCommandRegistry } from './configurators/slash/registry.js';
 import {
   OpenSpecConfig,
   AI_TOOLS,
   OPENSPEC_DIR_NAME,
   AIToolOption,
+  OPENSPEC_MARKERS,
 } from './config.js';
 import { PALETTE } from './styles/palette.js';
-import { serializeConfig } from './config-prompts.js';
-import {
-  generateCommands,
-  CommandAdapterRegistry,
-} from './command-generation/index.js';
-import {
-  detectLegacyArtifacts,
-  cleanupLegacyArtifacts,
-  formatCleanupSummary,
-  formatDetectionSummary,
-  type LegacyDetectionResult,
-} from './legacy-cleanup.js';
-import {
-  generateSkillContent,
-  getToolStates,
-} from './shared/index.js';
-import {
-  getSkillTemplatesChinese,
-  getCommandContentsChinese,
-} from './shared/skill-generation_chinese.js';
-import { isInteractive } from '../utils/interactive.js';
-import { getChineseToolName } from './config_chinese.js';
-
-const require = createRequire(import.meta.url);
-const { version: OPENSPEC_VERSION } = require('../../package.json');
 
 const PROGRESS_SPINNER = {
   interval: 80,
   frames: ['░░░', '▒░░', '▒▒░', '▒▒▒', '▓▒▒', '▓▓▒', '▓▓▓', '▒▓▓', '░▒▓'],
 };
-
-const DEFAULT_SCHEMA = 'spec-driven';
 
 const LETTER_MAP: Record<string, string[]> = {
   O: [' ████ ', '██  ██', '██  ██', '██  ██', ' ████ '],
@@ -116,6 +90,12 @@ type WizardStep = 'intro' | 'select' | 'review';
 
 type ToolSelectionPrompt = (config: ToolWizardConfig) => Promise<string[]>;
 
+type RootStubStatus = 'created' | 'updated' | 'skipped';
+
+const ROOT_STUB_CHOICE_VALUE = '__root_stub__';
+
+const OTHER_TOOLS_HEADING_VALUE = '__heading-other__';
+const LIST_SPACER_VALUE = '__list-spacer__';
 
 const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
   (config, done) => {
@@ -268,7 +248,10 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
         if (isEnterKey(key)) {
           const finalSelection = config.choices
             .map((choice) => choice.value)
-            .filter((value) => selectedSet.has(value));
+            .filter(
+              (value) =>
+                selectedSet.has(value) && value !== ROOT_STUB_CHOICE_VALUE
+            );
           done(finalSelection);
           return;
         }
@@ -280,7 +263,16 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
       }
     });
 
-    const selectedChoices = selectableChoices.filter((choice) =>
+    const rootStubChoice = selectableChoices.find(
+      (choice) => choice.value === ROOT_STUB_CHOICE_VALUE
+    );
+    const rootStubSelected = rootStubChoice
+      ? selectedSet.has(ROOT_STUB_CHOICE_VALUE)
+      : false;
+    const nativeChoices = selectableChoices.filter(
+      (choice) => choice.value !== ROOT_STUB_CHOICE_VALUE
+    );
+    const selectedNativeChoices = nativeChoices.filter((choice) =>
       selectedSet.has(choice.value)
     );
 
@@ -291,7 +283,7 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
         ? PALETTE.midGray(` (${choice.label.annotation})`)
         : '';
       const configuredNote = choice.configured
-        ? PALETTE.midGray('（已配置）')
+        ? PALETTE.midGray(' (already configured)')
         : '';
       return `${PALETTE.white(choice.label.primary)}${annotation}${configuredNote}`;
     };
@@ -324,12 +316,17 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
       lines.push(page);
       lines.push('');
       lines.push(PALETTE.midGray('选定的配置:'));
-      if (selectedChoices.length === 0) {
+      if (rootStubSelected && rootStubChoice) {
         lines.push(
-          `  ${PALETTE.midGray('- 未选择任何工具')}`
+          `  ${PALETTE.white('-')} ${formatSummaryLabel(rootStubChoice)}`
+        );
+      }
+      if (selectedNativeChoices.length === 0) {
+        lines.push(
+          `  ${PALETTE.midGray('- 没有选择原生支持的提供商')}`
         );
       } else {
-        selectedChoices.forEach((choice) => {
+        selectedNativeChoices.forEach((choice) => {
           lines.push(
             `  ${PALETTE.white('-')} ${formatSummaryLabel(choice)}`
           );
@@ -342,12 +339,20 @@ const toolSelectionWizard = createPrompt<string[], ToolWizardConfig>(
       );
       lines.push('');
 
-      if (selectedChoices.length === 0) {
+      if (rootStubSelected && rootStubChoice) {
         lines.push(
-          PALETTE.midGray('未选择任何工具。可稍后再次运行 init 配置。')
+          `${PALETTE.white('▌')} ${formatSummaryLabel(rootStubChoice)}`
+        );
+      }
+
+      if (selectedNativeChoices.length === 0) {
+        lines.push(
+          PALETTE.midGray(
+            '没有选择原生支持的提供商。通用指令仍将被应用。'
+          )
         );
       } else {
-        selectedChoices.forEach((choice) => {
+        selectedNativeChoices.forEach((choice) => {
           lines.push(
             `${PALETTE.white('▌')} ${formatSummaryLabel(choice)}`
           );
@@ -384,10 +389,6 @@ export class InitCommandChinese {
 
     // Validation happens silently in the background
     const extendMode = await this.validate(projectPath, openspecPath);
-
-    // Legacy cleanup (skills workflow)
-    await this.handleLegacyCleanup(projectPath);
-
     const existingToolStates = await this.getExistingToolStates(projectPath, extendMode);
 
     this.renderBanner(extendMode);
@@ -395,17 +396,31 @@ export class InitCommandChinese {
     // Get configuration (after validation to avoid prompts if validation fails)
     const config = await this.getConfiguration(existingToolStates, extendMode);
 
-    const availableTools = AI_TOOLS.filter((tool) => tool.available && tool.skillsDir);
+    const availableTools = AI_TOOLS.filter((tool) => tool.available);
     const selectedIds = new Set(config.aiTools);
     const selectedTools = availableTools.filter((tool) =>
       selectedIds.has(tool.value)
     );
+    const created = selectedTools.filter(
+      (tool) => !existingToolStates[tool.value]
+    );
+    const refreshed = selectedTools.filter(
+      (tool) => existingToolStates[tool.value]
+    );
+    const skippedExisting = availableTools.filter(
+      (tool) => !selectedIds.has(tool.value) && existingToolStates[tool.value]
+    );
+    const skipped = availableTools.filter(
+      (tool) => !selectedIds.has(tool.value) && !existingToolStates[tool.value]
+    );
+
     // Step 1: Create directory structure
     if (!extendMode) {
       const structureSpinner = this.startSpinner(
         '正在创建OpenSpec结构...'
       );
       await this.createDirectoryStructure(openspecPath);
+      await this.generateFiles(openspecPath, config);
       structureSpinner.stopAndPersist({
         symbol: PALETTE.white('▌'),
         text: PALETTE.white('OpenSpec结构已创建'),
@@ -413,27 +428,35 @@ export class InitCommandChinese {
     } else {
       ora({ stream: process.stdout }).info(
         PALETTE.midGray(
-          'ℹ OpenSpec已初始化。正在检查缺失的目录...'
+          'ℹ OpenSpec已初始化。正在检查缺失的文件...'
         )
       );
       await this.createDirectoryStructure(openspecPath);
+      await this.ensureTemplateFiles(openspecPath, config);
     }
 
-    // Step 2: Generate skills and commands
-    const toolEntries = selectedTools.map((tool) => ({
-      value: tool.value,
-      name: getChineseToolName(tool.value),
-      skillsDir: tool.skillsDir as string,
-      wasConfigured: Boolean(existingToolStates[tool.value]),
-    }));
-
-    const results = await this.generateSkillsAndCommands(projectPath, toolEntries);
-
-    // Step 3: Create config.yaml if needed
-    const configStatus = await this.createConfig(openspecPath);
+    // Step 2: Configure AI tools
+    const toolSpinner = this.startSpinner('正在配置AI工具...');
+    const rootStubStatus = await this.configureAITools(
+      projectPath,
+      openspecDir,
+      config.aiTools
+    );
+    toolSpinner.stopAndPersist({
+      symbol: PALETTE.white('▌'),
+      text: PALETTE.white('AI工具已配置'),
+    });
 
     // Success message
-    this.displaySuccessMessage(projectPath, toolEntries, results, configStatus);
+    this.displaySuccessMessage(
+      selectedTools,
+      created,
+      refreshed,
+      skippedExisting,
+      skipped,
+      extendMode,
+      rootStubStatus
+    );
   }
 
   private async validate(
@@ -447,55 +470,6 @@ export class InitCommandChinese {
       throw new Error(`写入权限不足: ${projectPath}`);
     }
     return extendMode;
-  }
-
-  private canPromptInteractively(): boolean {
-    if (this.toolsArg !== undefined) return false;
-    return isInteractive();
-  }
-
-  private async handleLegacyCleanup(projectPath: string): Promise<void> {
-    const detection = await detectLegacyArtifacts(projectPath);
-
-    if (!detection.hasLegacyArtifacts) {
-      return;
-    }
-
-    console.log();
-    console.log(formatDetectionSummary(detection));
-    console.log();
-
-    const canPrompt = this.canPromptInteractively();
-    if (!canPrompt) {
-      console.log(chalk.red('检测到旧版文件，但当前为非交互模式。'));
-      console.log(chalk.dim('请在交互模式运行，或手动清理旧版文件后再试。'));
-      process.exit(1);
-    }
-
-    const { confirm } = await import('@inquirer/prompts');
-    const shouldCleanup = await confirm({
-      message: '检测到旧版文件，是否升级并清理？',
-      default: true,
-    });
-
-    if (!shouldCleanup) {
-      console.log(chalk.dim('已取消初始化。'));
-      console.log(chalk.dim('如需跳过此提示，请先手动清理旧版文件。'));
-      process.exit(0);
-    }
-
-    await this.performLegacyCleanup(projectPath, detection);
-  }
-
-  private async performLegacyCleanup(
-    projectPath: string,
-    detection: LegacyDetectionResult
-  ): Promise<void> {
-    const spinner = ora('正在清理旧版文件...').start();
-    const result = await cleanupLegacyArtifacts(projectPath, detection);
-    spinner.succeed('旧版文件已清理');
-    console.log();
-    console.log(formatCleanupSummary(result));
   }
 
   private async getConfiguration(
@@ -531,7 +505,7 @@ export class InitCommandChinese {
       );
     }
 
-    const availableTools = AI_TOOLS.filter((tool) => tool.available && tool.skillsDir);
+    const availableTools = AI_TOOLS.filter((tool) => tool.available);
     const availableValues = availableTools.map((tool) => tool.value);
     const availableSet = new Set(availableValues);
     const availableList = ['all', 'none', ...availableValues].join(', ');
@@ -586,7 +560,7 @@ export class InitCommandChinese {
     existingTools: Record<string, boolean>,
     extendMode: boolean
   ): Promise<string[]> {
-    const availableTools = AI_TOOLS.filter((tool) => tool.available && tool.skillsDir);
+    const availableTools = AI_TOOLS.filter((tool) => tool.available);
 
     const baseMessage = extendMode
       ? '您想要添加或刷新哪些原生支持的AI工具？'
@@ -612,10 +586,39 @@ export class InitCommandChinese {
       ...availableTools.map<ToolWizardChoice>((tool) => ({
         kind: 'option',
         value: tool.value,
-        label: parseToolLabel(getChineseToolName(tool.value)),
+        label: parseToolLabel(tool.name),
         configured: Boolean(existingTools[tool.value]),
         selectable: true,
       })),
+      ...(availableTools.length
+        ? ([
+            {
+              kind: 'info' as const,
+              value: LIST_SPACER_VALUE,
+              label: { primary: '' },
+              selectable: false,
+            },
+          ] as ToolWizardChoice[])
+        : []),
+      {
+        kind: 'heading',
+        value: OTHER_TOOLS_HEADING_VALUE,
+        label: {
+          primary:
+            '其他工具 (使用通用 AGENTS.md 适用于 Amp、VS Code、GitHub Copilot 等)',
+        },
+        selectable: false,
+      },
+      {
+        kind: 'option',
+        value: ROOT_STUB_CHOICE_VALUE,
+        label: {
+          primary: '通用 AGENTS.md',
+          annotation: '始终可用',
+        },
+        configured: extendMode,
+        selectable: true,
+      },
     ];
 
     return this.prompt({
@@ -635,10 +638,71 @@ export class InitCommandChinese {
       return Object.fromEntries(AI_TOOLS.map(t => [t.value, false]));
     }
 
-    const toolStates = getToolStates(projectPath);
-    return Object.fromEntries(
-      AI_TOOLS.map((t) => [t.value, toolStates.get(t.value)?.configured ?? false])
+    // Extend mode - check all tools in parallel for better performance
+    const entries = await Promise.all(
+      AI_TOOLS.map(async (t) => [t.value, await this.isToolConfigured(projectPath, t.value)] as const)
     );
+    return Object.fromEntries(entries);
+  }
+
+  private async isToolConfigured(
+    projectPath: string,
+    toolId: string
+  ): Promise<boolean> {
+    // A tool is only considered "configured by OpenSpec" if its files contain OpenSpec markers.
+    // For tools with both config files and slash commands, BOTH must have markers.
+    // For slash commands, at least one file with markers is sufficient (not all required).
+
+    // Helper to check if a file exists and contains OpenSpec markers
+    const fileHasMarkers = async (absolutePath: string): Promise<boolean> => {
+      try {
+        const content = await FileSystemUtils.readFile(absolutePath);
+        return content.includes(OPENSPEC_MARKERS.start) && content.includes(OPENSPEC_MARKERS.end);
+      } catch {
+        return false;
+      }
+    };
+
+    let hasConfigFile = false;
+    let hasSlashCommands = false;
+
+    // Check if the tool has a config file with OpenSpec markers
+    const configFile = ToolRegistry.get(toolId)?.configFileName;
+    if (configFile) {
+      const configPath = path.join(projectPath, configFile);
+      hasConfigFile = (await FileSystemUtils.fileExists(configPath)) && (await fileHasMarkers(configPath));
+    }
+
+    // Check if any slash command file exists with OpenSpec markers
+    const slashConfigurator = SlashCommandRegistry.get(toolId);
+    if (slashConfigurator) {
+      for (const target of slashConfigurator.getTargets()) {
+        const absolute = slashConfigurator.resolveAbsolutePath(projectPath, target.id);
+        if ((await FileSystemUtils.fileExists(absolute)) && (await fileHasMarkers(absolute))) {
+          hasSlashCommands = true;
+          break; // At least one file with markers is sufficient
+        }
+      }
+    }
+
+    // Tool is only configured if BOTH exist with markers
+    // OR if the tool has no config file requirement (slash commands only)
+    // OR if the tool has no slash commands requirement (config file only)
+    const hasConfigFileRequirement = configFile !== undefined;
+    const hasSlashCommandRequirement = slashConfigurator !== undefined;
+
+    if (hasConfigFileRequirement && hasSlashCommandRequirement) {
+      // Both are required - both must be present with markers
+      return hasConfigFile && hasSlashCommands;
+    } else if (hasConfigFileRequirement) {
+      // Only config file required
+      return hasConfigFile;
+    } else if (hasSlashCommandRequirement) {
+      // Only slash commands required
+      return hasSlashCommands;
+    }
+
+    return false;
   }
 
   private async createDirectoryStructure(openspecPath: string): Promise<void> {
@@ -654,163 +718,219 @@ export class InitCommandChinese {
     }
   }
 
-  private async createConfig(
-    openspecPath: string
-  ): Promise<'created' | 'exists' | 'skipped'> {
-    const configPath = path.join(openspecPath, 'config.yaml');
-    const configYmlPath = path.join(openspecPath, 'config.yml');
-    const configYamlExists = fs.existsSync(configPath);
-    const configYmlExists = fs.existsSync(configYmlPath);
+  private async generateFiles(
+    openspecPath: string,
+    config: OpenSpecConfig
+  ): Promise<void> {
+    await this.writeTemplateFiles(openspecPath, config, false);
+  }
 
-    if (configYamlExists || configYmlExists) {
-      return 'exists';
-    }
+  private async ensureTemplateFiles(
+    openspecPath: string,
+    config: OpenSpecConfig
+  ): Promise<void> {
+    await this.writeTemplateFiles(openspecPath, config, true);
+  }
 
-    try {
-      const yamlContent = serializeConfig({ schema: DEFAULT_SCHEMA });
-      await FileSystemUtils.writeFile(configPath, yamlContent);
-      return 'created';
-    } catch {
-      return 'skipped';
+  private async writeTemplateFiles(
+    openspecPath: string,
+    config: OpenSpecConfig,
+    skipExisting: boolean
+  ): Promise<void> {
+    const context: ProjectContext = {
+      // Could be enhanced with prompts for project details
+    };
+
+    const templates = TemplateManagerChinese.getTemplates(context);
+
+    for (const template of templates) {
+      const filePath = path.join(openspecPath, template.path);
+
+      // Skip if file exists and we're in skipExisting mode
+      if (skipExisting && (await FileSystemUtils.fileExists(filePath))) {
+        continue;
+      }
+
+      const content =
+        typeof template.content === 'function'
+          ? template.content(context)
+          : template.content;
+
+      await FileSystemUtils.writeFile(filePath, content);
     }
   }
 
-  private async generateSkillsAndCommands(
+  private async configureAITools(
     projectPath: string,
-    tools: Array<{ value: string; name: string; skillsDir: string; wasConfigured: boolean }>
-  ): Promise<{
-    createdTools: typeof tools;
-    refreshedTools: typeof tools;
-    failedTools: Array<{ name: string; error: Error }>;
-    commandsSkipped: string[];
-  }> {
-    const createdTools: typeof tools = [];
-    const refreshedTools: typeof tools = [];
-    const failedTools: Array<{ name: string; error: Error }> = [];
-    const commandsSkipped: string[] = [];
+    openspecDir: string,
+    toolIds: string[]
+  ): Promise<RootStubStatus> {
+    const rootStubStatus = await this.configureRootAgentsStub(
+      projectPath,
+      openspecDir
+    );
 
-    const skillTemplates = getSkillTemplatesChinese();
-    const commandContents = getCommandContentsChinese();
+    for (const toolId of toolIds) {
+      const configurator = ToolRegistry.get(toolId);
+      if (configurator && configurator.isAvailable) {
+        await configurator.configure(projectPath, openspecDir);
+      }
 
-    for (const tool of tools) {
-      const spinner = ora(`正在配置 ${tool.name}...`).start();
-
-      try {
-        const skillsDir = path.join(projectPath, tool.skillsDir, 'skills');
-
-        for (const { template, dirName } of skillTemplates) {
-          const skillDir = path.join(skillsDir, dirName);
-          const skillFile = path.join(skillDir, 'SKILL.md');
-
-          const transformer = tool.value === 'opencode' ? transformToHyphenCommands : undefined;
-          const skillContent = generateSkillContent(template, OPENSPEC_VERSION, transformer);
-          await FileSystemUtils.writeFile(skillFile, skillContent);
-        }
-
-        const adapter = CommandAdapterRegistry.get(tool.value);
-        if (adapter) {
-          const generatedCommands = generateCommands(commandContents, adapter);
-          for (const cmd of generatedCommands) {
-            const commandFile = path.isAbsolute(cmd.path) ? cmd.path : path.join(projectPath, cmd.path);
-            await FileSystemUtils.writeFile(commandFile, cmd.fileContent);
-          }
-        } else {
-          commandsSkipped.push(tool.value);
-        }
-
-        spinner.succeed(`已完成 ${tool.name} 配置`);
-        if (tool.wasConfigured) {
-          refreshedTools.push(tool);
-        } else {
-          createdTools.push(tool);
-        }
-      } catch (error) {
-        spinner.fail(`配置 ${tool.name} 失败`);
-        failedTools.push({ name: tool.name, error: error as Error });
+      const slashConfigurator = SlashCommandRegistry.get(toolId);
+      if (slashConfigurator && slashConfigurator.isAvailable) {
+        await slashConfigurator.generateAll(projectPath, openspecDir);
       }
     }
 
-    return { createdTools, refreshedTools, failedTools, commandsSkipped };
+    return rootStubStatus;
+  }
+
+  private async configureRootAgentsStub(
+    projectPath: string,
+    openspecDir: string
+  ): Promise<RootStubStatus> {
+    const configurator = ToolRegistry.get('agents');
+    if (!configurator || !configurator.isAvailable) {
+      return 'skipped';
+    }
+
+    const stubPath = path.join(projectPath, configurator.configFileName);
+    const existed = await FileSystemUtils.fileExists(stubPath);
+
+    await configurator.configure(projectPath, openspecDir);
+
+    return existed ? 'updated' : 'created';
   }
 
   private displaySuccessMessage(
-    projectPath: string,
-    tools: Array<{ value: string; name: string; skillsDir: string; wasConfigured: boolean }>,
-    results: {
-      createdTools: Array<{ value: string; name: string; skillsDir: string; wasConfigured: boolean }>;
-      refreshedTools: Array<{ value: string; name: string; skillsDir: string; wasConfigured: boolean }>;
-      failedTools: Array<{ name: string; error: Error }>;
-      commandsSkipped: string[];
-    },
-    configStatus: 'created' | 'exists' | 'skipped'
+    selectedTools: AIToolOption[],
+    created: AIToolOption[],
+    refreshed: AIToolOption[],
+    skippedExisting: AIToolOption[],
+    skipped: AIToolOption[],
+    extendMode: boolean,
+    rootStubStatus: RootStubStatus
   ): void {
-    console.log();
-    console.log(chalk.bold('OpenSpec 设置完成'));
-    console.log();
-
-    if (results.createdTools.length > 0) {
-      console.log(`已创建: ${results.createdTools.map((t) => t.name).join('、')}`);
-    }
-    if (results.refreshedTools.length > 0) {
-      console.log(`已刷新: ${results.refreshedTools.map((t) => t.name).join('、')}`);
-    }
-
-    const successfulTools = [...results.createdTools, ...results.refreshedTools];
-    if (successfulTools.length > 0) {
-      const toolDirs = [...new Set(successfulTools.map((t) => t.skillsDir))].join(', ');
-      const hasCommands = results.commandsSkipped.length < successfulTools.length;
-      if (hasCommands) {
-        console.log(`${getSkillTemplatesChinese().length} 个技能、${getCommandContentsChinese().length} 个命令已写入 ${toolDirs}/`);
-      } else {
-        console.log(`${getSkillTemplatesChinese().length} 个技能已写入 ${toolDirs}/`);
-      }
-    }
-
-    if (results.failedTools.length > 0) {
-      console.log(chalk.red(`失败: ${results.failedTools.map((f) => `${f.name} (${f.error.message})`).join(', ')}`));
-    }
-
-    if (results.commandsSkipped.length > 0) {
-      console.log(chalk.dim(`未生成命令: ${results.commandsSkipped.join(', ')} (无适配器)`));
-    }
-
-    if (configStatus === 'created') {
-      console.log(`配置: openspec/config.yaml (schema: ${DEFAULT_SCHEMA})`);
-    } else if (configStatus === 'exists') {
-      const configYaml = path.join(projectPath, OPENSPEC_DIR_NAME, 'config.yaml');
-      const configYml = path.join(projectPath, OPENSPEC_DIR_NAME, 'config.yml');
-      const configName = fs.existsSync(configYaml) ? 'config.yaml' : fs.existsSync(configYml) ? 'config.yml' : 'config.yaml';
-      console.log(`配置: openspec/${configName} (已存在)`);
-    } else {
-      console.log(chalk.dim('配置: 已跳过'));
-    }
+    console.log(); // Empty line for spacing
+    const successHeadline = extendMode
+      ? 'OpenSpec工具配置已更新！'
+      : 'OpenSpec初始化成功！';
+    ora().succeed(PALETTE.white(successHeadline));
 
     console.log();
-    console.log(chalk.bold('开始使用:'));
-    console.log('  /opsx:new       创建变更');
-    console.log('  /opsx:continue  继续生成产物');
-    console.log('  /opsx:apply     实施任务');
+    console.log(PALETTE.lightGray('工具总结:'));
+    const summaryLines = [
+      rootStubStatus === 'created'
+        ? `${PALETTE.white('▌')} ${PALETTE.white(
+            '已为其他助手创建根 AGENTS.md 存根'
+          )}`
+        : null,
+      rootStubStatus === 'updated'
+        ? `${PALETTE.lightGray('▌')} ${PALETTE.lightGray(
+            '已为其他助手刷新根 AGENTS.md 存根'
+          )}`
+        : null,
+      created.length
+        ? `${PALETTE.white('▌')} ${PALETTE.white(
+            '已创建:'
+          )} ${this.formatToolNames(created)}`
+        : null,
+      refreshed.length
+        ? `${PALETTE.lightGray('▌')} ${PALETTE.lightGray(
+            '已刷新:'
+          )} ${this.formatToolNames(refreshed)}`
+        : null,
+      skippedExisting.length
+        ? `${PALETTE.midGray('▌')} ${PALETTE.midGray(
+            '跳过 (已配置):'
+          )} ${this.formatToolNames(skippedExisting)}`
+        : null,
+      skipped.length
+        ? `${PALETTE.darkGray('▌')} ${PALETTE.darkGray(
+            '跳过:'
+          )} ${this.formatToolNames(skipped)}`
+        : null,
+    ].filter((line): line is string => Boolean(line));
+    for (const line of summaryLines) {
+      console.log(line);
+    }
 
     console.log();
-    console.log(`了解更多: ${chalk.cyan('https://github.com/org-hex/openspec-chinese')}`);
-    console.log(`反馈:   ${chalk.cyan('https://github.com/org-hex/openspec-chinese/issues')}`);
+    console.log(
+      PALETTE.midGray(
+        '使用 `openspec update` 在将来刷新共享的OpenSpec指令。'
+      )
+    );
 
-    if (successfulTools.length > 0) {
-      console.log();
-      console.log(chalk.white('如需斜杠命令生效，请重启你的 IDE。'));
-    }
+    // Get the selected tool name(s) for display
+    const toolName = this.formatToolNames(selectedTools);
+
+    console.log();
+    console.log(`后续步骤 - 将这些提示复制到 ${toolName}:`);
+    console.log(
+      chalk.gray('────────────────────────────────────────────────────────────')
+    );
+    console.log(PALETTE.white('1. 填充您的项目上下文:'));
+    console.log(
+      PALETTE.lightGray(
+        '   "请阅读 openspec/project.md 并帮助我填写'
+      )
+    );
+    console.log(
+      PALETTE.lightGray(
+        '   关于我的项目、技术栈和约定的详细信息"\n'
+      )
+    );
+    console.log(PALETTE.white('2. 创建您的第一个变更提案:'));
+    console.log(
+      PALETTE.lightGray(
+        '   "我想添加 [您的功能这里]。请为此'
+      )
+    );
+    console.log(
+      PALETTE.lightGray('   功能创建一个OpenSpec变更提案"\n')
+    );
+    console.log(PALETTE.white('3. 学习OpenSpec工作流程:'));
+    console.log(
+      PALETTE.lightGray(
+        '   "请从 openspec/AGENTS.md 解释OpenSpec工作流程'
+      )
+    );
+    console.log(
+      PALETTE.lightGray('   以及我应该如何在这个项目中与您合作"')
+    );
+    console.log(
+      PALETTE.darkGray(
+        '────────────────────────────────────────────────────────────\n'
+      )
+    );
 
     // Codex heads-up: prompts installed globally
-    const selectedToolIds = new Set(tools.map((t) => t.value));
+    const selectedToolIds = new Set(selectedTools.map((t) => t.value));
     if (selectedToolIds.has('codex')) {
-      console.log();
       console.log(PALETTE.white('Codex 设置说明'));
       console.log(
         PALETTE.midGray('提示已安装到 ~/.codex/prompts (或 $CODEX_HOME/prompts)。')
       );
+      console.log();
     }
+  }
 
-    console.log();
+  private formatToolNames(tools: AIToolOption[]): string {
+    const names = tools
+      .map((tool) => tool.successLabel ?? tool.name)
+      .filter((name): name is string => Boolean(name));
+
+    if (names.length === 0)
+      return PALETTE.lightGray('您的 AGENTS.md 兼容助手');
+    if (names.length === 1) return PALETTE.white(names[0]);
+
+    const base = names.slice(0, -1).map((name) => PALETTE.white(name));
+    const last = PALETTE.white(names[names.length - 1]);
+
+    return `${base.join(PALETTE.midGray(', '))}${
+      base.length ? PALETTE.midGray(', 和 ') : ''
+    }${last}`;
   }
 
   private renderBanner(_extendMode: boolean): void {
