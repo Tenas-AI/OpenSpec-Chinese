@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Fission-AI/OpenSpec">
+  <a href="https://github.com/org-hex/openspec-chinese">
     <picture>
       <source srcset="assets/openspec_pixel_dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="assets/openspec_pixel_light.svg" media="(prefers-color-scheme: light)">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Fission-AI/OpenSpec/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/org-hex/openspec-chinese/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/org-hex/openspec-chinese/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
 </p>
 
@@ -24,7 +24,7 @@
 
 ## 📖 项目简介
 
-**OpenSpec 中文版** 是基于 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 的中文本地化版本。
+**OpenSpec 中文版** 是基于 [org-hex/openspec-chinese](https://github.com/org-hex/openspec-chinese) 的中文本地化版本。
 
 ### 🎯 主要特性
 
@@ -55,15 +55,15 @@
 #### 方法1：全局安装（推荐）
 
 ```bash
-npm install -g @org-hex/openspec@latest
+npm install -g @org-hex/openspec-chinese@latest
 ```
 
 #### 方法2：本地开发模式
 
 ```bash
 # 克隆中文版仓库
-git clone https://github.com/org-hex/OpenSpec-Chinese.git
-cd OpenSpec-Chinese
+git clone https://github.com/org-hex/openspec-chinese.git
+cd openspec-chinese
 
 # 安装依赖
 pnpm install
@@ -76,8 +76,8 @@ pnpm run build
 
 ```bash
 # 克隆中文版仓库
-git clone https://github.com/org-hex/OpenSpec-Chinese.git
-cd OpenSpec-Chinese
+git clone https://github.com/org-hex/openspec-chinese.git
+cd openspec-chinese
 
 # 安装依赖
 pnpm install
@@ -92,7 +92,7 @@ npm link
 openspec-chinese --version
 
 # 如需取消链接
-npm unlink -g @fission-ai/openspec
+npm unlink -g @org-hex/openspec-chinese
 ```
 
 ### 启动命令
@@ -113,7 +113,7 @@ openspec-chinese --version
 
 #### 本地开发模式（直接运行）
 ```bash
-# 在 OpenSpec-Chinese 项目目录下
+# 在 openspec-chinese 项目目录下
 pnpm run build && node bin/openspec-chinese.js
 ```
 
@@ -145,7 +145,7 @@ openspec-chinese --version
 ### 开发者常用命令
 
 ```bash
-# 在 OpenSpec-Chinese 项目目录下进行开发
+# 在 openspec-chinese 项目目录下进行开发
 
 # 构建项目
 pnpm run build
@@ -169,7 +169,7 @@ pnpm test
 pnpm run test:coverage
 
 # 取消全局链接
-npm unlink -g @fission-ai/openspec
+npm unlink -g @org-hex/openspec-chinese
 
 # 重新链接（代码更新后）
 pnpm run build && npm link
@@ -329,7 +329,7 @@ A: 有几种方式：
 
 ### Q: 运行时提示 "command not found: openspec-chinese" 怎么办？
 A: 根据您的安装方式检查：
-- **全局安装**：尝试重新安装 `npm install -g @fission-ai/openspec@latest`
+- **全局安装**：尝试重新安装 `npm install -g @org-hex/openspec-chinese@latest`
 - **本地开发**：
   1. 确保在项目目录下
   2. 运行 `pnpm run build` 构建项目
@@ -341,7 +341,7 @@ A: 根据您的安装方式检查：
 A: 可能的原因和解决方案：
 1. **权限问题**：尝试使用 `sudo npm link`（不推荐）或检查 npm 配置
 2. **PATH 问题**：确保全局 npm bin 目录在 PATH 中
-3. **链接失败**：尝试 `npm unlink -g @fission-ai/openspec` 然后 `npm link`
+3. **链接失败**：尝试 `npm unlink -g @org-hex/openspec-chinese` 然后 `npm link`
 4. **包名冲突**：检查是否已安装其他版本的 openspec
 
 ### Q: 如何切换回英文版？
@@ -383,7 +383,7 @@ MIT License - 与原版保持一致
 
 ## 🔗 相关链接
 
-- [原版 OpenSpec](https://github.com/Fission-AI/OpenSpec)
+- [原版 OpenSpec](https://github.com/org-hex/openspec)
 - [OpenSpec 官方文档](https://openspec.dev)
 - [AGENTS.md 规范](https://agents.md/)
 
