@@ -19,6 +19,12 @@
 
 - 同步上游 0.15.0 版本功能，支持新增的 AI 工具集成
 
+## Unreleased
+
+### Minor Changes
+
+- Add Antigravity slash command support so `openspec init` can generate `.agent/workflows/openspec-*.md` files with description-only frontmatter and `openspec update` refreshes existing workflows alongside Windsurf.
+
 ## 0.15.0
 
 ### Minor Changes
