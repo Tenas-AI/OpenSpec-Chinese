@@ -140,6 +140,8 @@ openspec-chinese init
 
 # 验证安装
 openspec-chinese --version
+
+# 重要提示：初始化完成后，如果斜杠命令没有立即显示，请重启您的 IDE/编程工具
 ```
 
 ### 开发者常用命令
@@ -168,12 +170,92 @@ pnpm test
 # 运行测试并生成覆盖率报告
 pnpm run test:coverage
 
+# 中文专用工具
+npm run validate:chinese          # 验证中文规格格式
+npm run create:proposal           # 创建中文提案模板
+
 # 取消全局链接
 npm unlink -g @org-hex/openspec-chinese
 
 # 重新链接（代码更新后）
 pnpm run build && npm link
 ```
+
+## 🛠️ 中文专用工具
+
+OpenSpec 中文版提供以下专用工具来帮助您更好地管理中文规格：
+
+### 创建提案模板
+
+```bash
+# 自动创建符合格式要求的提案模板
+npm run create:proposal add-user-auth
+
+# 或使用脚本直接创建
+node scripts/create-chinese-proposal.js my-feature-name
+```
+
+**创建的文件结构：**
+```
+openspec/changes/my-feature/
+├── proposal.md          # 提案说明（Why, What, Impact）
+├── tasks.md             # 实施任务清单
+└── specs/
+    └── example-capability/
+        └── spec.md      # 规格文档（包含正确格式示例）
+```
+
+### 中文格式验证
+
+```bash
+# 验证所有中文规格文件的格式
+npm run validate:chinese
+
+# 标准OpenSpec验证（英文和中文都适用）
+openspec validate my-change --strict
+```
+
+**验证内容：**
+- ✅ 检查 MUST/SHALL 关键字
+- ✅ 验证 Delta sections 格式
+- ✅ 检查 Requirement blocks 格式
+- ✅ 验证 Scenario blocks 和 Gherkin 语法
+- ✅ 中英文标点符号混用检查
+
+### 快速修复常见问题
+
+1. **缺少 MUST/SHALL 关键字**
+   ```markdown
+   # 错误 ❌
+   ### Requirement: 用户登录
+   系统提供用户登录功能。
+
+   # 正确 ✅
+   ### Requirement: 用户登录
+   系统 MUST 提供用户登录功能。
+   ```
+
+2. **Scenario 格式错误**
+   ```markdown
+   # 错误 ❌
+   - **Scenario**: 用户登录
+   - WHEN 用户登录
+
+   # 正确 ✅
+   #### Scenario: 用户登录
+   - **WHEN** 用户登录
+   ```
+
+3. **缺少 Delta Sections**
+   ```markdown
+   # 错误 ❌
+   ### Requirement: 新功能
+
+   # 正确 ✅
+   ## ADDED Requirements
+
+   ### Requirement: 新功能
+   ```
 
 ## 📋 使用方法
 
@@ -239,6 +321,8 @@ openspec-chinese archive add-user-search --yes
 | **CodeBuddy** | `/openspec:proposal`, `/openspec:apply`, `/openspec:archive` |
 | **GitHub Copilot** | `/openspec-proposal`, `/openspec-apply`, `/openspec-archive` |
 | **Amazon Q Developer** | `@openspec-proposal`, `@openspec-apply`, `@openspec-archive` |
+| **iFlow (iflow-cli)** | `/openspec-proposal`, `/openspec-apply`, `/openspec-archive` (`.iflow/commands/`) |
+| **Antigravity** | `/openspec-proposal`, `/openspec-apply`, `/openspec-archive` (`.agent/workflows/`) |
 
 ### AGENTS.md 兼容
 
