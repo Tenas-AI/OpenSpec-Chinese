@@ -19,6 +19,12 @@
 
 - 同步上游 0.15.0 版本功能，支持新增的 AI 工具集成
 
+## 0.17.2
+
+### Patch Changes
+
+- 455c65f: Fix `--no-interactive` flag in validate command to properly disable spinner, preventing hangs in pre-commit hooks and CI environments
+
 ## 0.17.1
 
 ### Patch Changes
