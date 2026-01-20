@@ -19,6 +19,22 @@
 
 - 同步上游 0.15.0 版本功能，支持新增的 AI 工具集成
 
+## 0.22.0
+
+### Minor Changes
+
+- [#530](https://github.com/Fission-AI/OpenSpec/pull/530) [`33466b1`](https://github.com/Fission-AI/OpenSpec/commit/33466b1e2a6798bdd6d0e19149173585b0612e6f) Thanks [@TabishB](https://github.com/TabishB)! - ### New Features
+
+  - **Project-level configuration** — Configure OpenSpec behavior per-project via `openspec/config.yaml`, including custom rules injection, context files, and schema resolution settings
+
+  - **Project-local schemas** — Define custom artifact schemas within your project's `openspec/schemas/` directory for project-specific workflows
+
+  - **Schema management commands** — New `openspec schema` commands (`list`, `show`, `export`, `validate`) for inspecting and managing artifact schemas (experimental)
+
+  ### Bug Fixes
+
+  - Fixed config loading to handle null `rules` field in project configuration
+
 ## 0.21.0
 
 ### Minor Changes
