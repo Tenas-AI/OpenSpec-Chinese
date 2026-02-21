@@ -178,7 +178,7 @@ openspec/
 \`\`\`markdown
 ## ADDED Requirements
 ### Requirement: 新功能
-系统应当提供...
+系统 SHALL 提供...
 
 #### Scenario: 成功案例
 - **WHEN** 用户执行操作
@@ -255,7 +255,7 @@ openspec/
 每个需求必须至少有一个场景。
 
 ### 需求措辞
-- 对规范性需求使用SHALL/MUST（除非故意非规范性，否则避免should/may）
+- 对规范性需求使用 SHALL/MUST（除非故意非规范性，否则避免 should/may）
 
 ### 增量操作
 
@@ -326,7 +326,7 @@ openspec list
 
 # 2) 选择变更id并创建脚手架
 CHANGE=add-two-factor-auth
-mkdir -p openspec/changes/$CHANGE/{specs/auth}
+mkdir -p openspec/changes/$CHANGE/{specs/auth}  # 展开为: openspec/changes/$CHANGE/specs/auth
 printf "## Why\\n...\\n\\n## What Changes\\n- ...\\n\\n## Impact\\n- ...\\n" > openspec/changes/$CHANGE/proposal.md
 printf "## 1. Implementation\\n- [ ] 1.1 ...\\n" > openspec/changes/$CHANGE/tasks.md
 
@@ -334,7 +334,7 @@ printf "## 1. Implementation\\n- [ ] 1.1 ...\\n" > openspec/changes/$CHANGE/task
 cat > openspec/changes/$CHANGE/specs/auth/spec.md << 'EOF'
 ## ADDED Requirements
 ### Requirement: 双重认证
-用户在登录期间必须提供第二个因素。
+用户在登录期间 MUST 提供第二个因素。
 
 #### Scenario: 需要OTP
 - **WHEN** 提供有效凭据
